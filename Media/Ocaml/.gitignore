@@ -1,2 +1,4 @@
-.vscode/
-_build/
+.vscode/*
+_build/*
+node_modules/*
+Ocaml.opam
