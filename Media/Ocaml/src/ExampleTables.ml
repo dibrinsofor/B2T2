@@ -21,7 +21,7 @@ let s = new students;;
 s#add_column bob;;
 s#add_column alice;;
 s#add_column eve;;
-let table = s#get_columns;;
+(* let table = s#get_columns;; *)
     
 
 (* studentsMissing: a simple table with some values missing *)
@@ -41,7 +41,7 @@ let s = new studentsMissing;;
 s#add_column bob;;
 s#add_column alice;;
 s#add_column eve;;
-let table = s#get_columns;;
+(* let table = s#get_columns;; *)
 
 
 (* employees: a table that contains employees and their department IDs 
@@ -68,7 +68,7 @@ e#add_column {last_name = Some "Heisenberg"; department_id = Some 33;};;
 e#add_column {last_name = Some "Robinson"; department_id = Some 34;};;
 e#add_column {last_name = Some "Smith"; department_id = Some 34;};;
 e#add_column {last_name = Some "Williams"; department_id = None;};;
-let table = e#get_columns;;
+(* let table = e#get_columns;; *)
 
 (* departments: a table that contains departments and their IDs 
    ([source](https://en.wikipedia.org/wiki/Join_(SQL))) *)
@@ -92,7 +92,7 @@ d#add_column {department_id = Some 31; departmen_name = Some "Sales"};;
 d#add_column {department_id = Some 33; departmen_name = Some "Engineering"};;
 d#add_column {department_id = Some 34; departmen_name = Some "Clerical"};;
 d#add_column {department_id = Some 35; departmen_name = Some "Marketing"};;
-let table = d#get_columns;;
+(* let table = d#get_columns;; *)
 
 
 (* jellyAnon: a jelly bean table that contains only boolean data *)
@@ -129,7 +129,7 @@ j#add_column {get_acne = Some false; red = Some false; black = Some true; white 
 j#add_column {get_acne = Some true; red = Some false; black = Some false; white = Some false; green = Some false; yellow = Some false; brown = Some true; orange = Some true; pink = Some false; purple = Some false};;
 j#add_column {get_acne = Some true; red = Some false; black = Some false; white = Some false; green = Some false; yellow = Some false; brown = Some false; orange = Some true; pink = Some false; purple = Some false};;
 j#add_column {get_acne = Some false; red = Some true; black = Some false; white = Some false; green = Some false; yellow = Some true; brown = Some true; orange = Some false; pink = Some true; purple = Some false};;
-let table = j#get_columns;;
+(* let table = j#get_columns;; *)
 
 (* jellyNamed: a jelly bean table that contains booleans and strings *)
 
@@ -167,7 +167,7 @@ j#add_column {name = Some "Hannah"; get_acne = Some false; red = Some false; bla
 j#add_column {name = Some "Matthew"; get_acne = Some true; red = Some false; black = Some false; white = Some false; green = Some false; yellow = Some false; brown = Some true; orange = Some true; pink = Some false; purple = Some false};;
 j#add_column {name = Some "Hailey"; get_acne = Some true; red = Some false; black = Some false; white = Some false; green = Some false; yellow = Some false; brown = Some false; orange = Some true; pink = Some false; purple = Some false};;
 j#add_column {name = Some "Nicholas"; get_acne = Some false; red = Some true; black = Some false; white = Some false; green = Some false; yellow = Some true; brown = Some true; orange = Some false; pink = Some true; purple = Some false};;
-let table = j#get_columns;;
+(* let table = j#get_columns;; *)
 
 (* ```lua
 | name       | get acne | red   | black | white | green | yellow | brown | orange | pink  | purple |
@@ -208,7 +208,7 @@ let g = new gradebook;;
 g#add_column {name = Some "Bob"; age = Some 12; quiz1 = Some 8; quiz2 = Some 9; midterm = Some 77; quiz3 = Some 7; quiz4 = Some 9; final = Some 87};;
 g#add_column {name = Some "Alice"; age = Some 17; quiz1 = Some 6; quiz2 = Some 8; midterm = Some 88; quiz3 = Some 8; quiz4 = Some 77; final = Some 85};;
 g#add_column {name = Some "Eve"; age = Some 13; quiz1 = Some 7; quiz2 = Some 9; midterm = Some 84; quiz3 = Some 8; quiz4 = Some 8; final = Some 77};;
-let table = g#get_columns;;
+(* let table = g#get_columns;; *)
 
 (* gradebookMissing: a gradebook table with some missing values *)
 
@@ -224,7 +224,7 @@ let g = new gradebookMissing;;
 g#add_column {name = Some "Bob"; age = Some 12; quiz1 = Some 8; quiz2 = Some 9; midterm = Some 77; quiz3 = Some 7; quiz4 = Some 9; final = Some 87};;
 g#add_column {name = Some "Alice"; age = Some 17; quiz1 = Some 6; quiz2 = Some 8; midterm = Some 88; quiz3 = None; quiz4 = Some 77; final = Some 85};;
 g#add_column {name = Some "Eve"; age = Some 13; quiz1 = None; quiz2 = Some 9; midterm = Some 84; quiz3 = Some 8; quiz4 = Some 8; final = Some 77};;
-let table = g#get_columns;;
+(* let table = g#get_columns;; *)
 
 (* gradebookSeq: a gradebook table with sequence cells *)
 
@@ -249,7 +249,7 @@ let g = new gradebookSeq;;
 g#add_column {name = Some "Bob"; age = Some 12; quizzes = Some [|8;9;7;9|]; midterm = Some 77; final = Some 87};;
 g#add_column {name = Some "Alice"; age = Some 17; quizzes = Some [|6;8;8;7|]; midterm = Some 88; final = Some 85};;
 g#add_column {name = Some "Eve"; age = Some 13; quizzes = Some [|7;9;8;8|]; midterm = Some 84; final = Some 77};;
-let table = g#get_columns;;
+(* let table = g#get_columns;; *)
 
 (* gradebookTable: a gradebook table with table cells *)
 
@@ -279,4 +279,4 @@ let g = new gradebookTable;;
 g#add_column {name = Some "Bob"; age = Some 12; quizzes = Some [{quiz_number = 1; grade = Some 8;};{quiz_number = 2; grade = Some 9;};{quiz_number = 3; grade = Some 7;};{quiz_number = 4; grade = Some 9;}]; midterm = Some 77; final = Some 87};;
 g#add_column {name = Some "Alice"; age = Some 17; quizzes = Some [{quiz_number = 1; grade = Some 6;};{quiz_number = 2; grade = Some 8;};{quiz_number = 3; grade = Some 8;};{quiz_number = 4; grade = Some 7;}]; midterm = Some 88; final = Some 85};;
 g#add_column {name = Some "Eve"; age = Some 13; quizzes = Some [{quiz_number = 1; grade = Some 7;};{quiz_number = 2; grade = Some 9;};{quiz_number = 3; grade = Some 8;};{quiz_number = 4; grade = Some 8;}]; midterm = Some 84; final = Some 77};;
-let table = g#get_columns;;
+(* let table = g#get_columns;; *)
