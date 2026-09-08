@@ -1,263 +1,81 @@
-open Core;;
+(** Immutable, schema-checked core representation for B2T2 tables. *)
+type value =
+  | String of string | Int of int | Float of float | Bool of bool
+  | Sequence of value list | Nested_table of t | Missing
+and row = (string * value) list
+and t = { header : string list; rows : row list }
+type 'a checked = ('a, string) result
+let ( let* ) = Result.bind
 
+let unique xs =
+  let rec loop seen = function [] -> true | x :: xs -> not (List.mem x seen) && loop (x :: seen) xs in
+  loop [] xs
+let create header = if unique header then Ok { header; rows = [] } else Error "a table header cannot contain duplicate column names"
+let empty = { header = []; rows = [] }
+let header t = t.header
+let nrows t = List.length t.rows
+let ncols t = List.length t.header
+let find_in_row column row = List.assoc_opt column row
 
-let combine_headers_values headers values =
-  List.zip headers values
-  |> List.filter_map ~f:(function
-      | Some header, value -> Some (header, value)
-      | _ -> None
-    )
-;;
-(* table *)
-(* type 'a header = (string * 'a) list *)
-type header = string list
-
-(* let header_type header = 
- List.map (fun (_, second) -> second) header
-
-class ['a] table (header : 'b header)  = object
-  val mutable header : 'b header = header
-  val mutable columns : 'a list = []
-  method columns : 'a list = columns
-  
-  (* add rows, can't enforce the header *)
-  method add_rows (rows : 'a list) : 'a list =
-    columns <- rows @ columns;
-    columns
-    
-  end;; *)
-  
-  class ['a] table (header : header)  = object
-    val mutable header : header = header
-    val mutable columns : 'a list = []
-    method columns : 'a list = columns
-    
-    (* add rows, can't enforce the header *)
-    method add_rows (rows : 'a) : 'a list =
-      let new_cols = 
-        match List.zip header rows
-        | 
-      columns <- rows @ columns;
-      columns
-end
-
-
-header -> ["Name"; "Age"; "Middle"; "Score"; "More"]
-
-rows -> [(Some "Name"; Some 10; Some "Dibit"; Some 90.2; None),
-         (Some "Name"; Some 10; Some "Dibit"; Some 90.2; None),
-         (Some "Name"; Some 10; Some "Dibit"; Some 90.2; None)]
-
-columns -> [{"Name": "Name"; "Age": 10; "Middle": "Dibit"; "Score": 90.2; "More": None},
-            {"Name": "Name"; "Age": 10; "Middle": "Dibit"; "Score": 90.2; "More": None},
-            {"Name": "Name"; "Age": 10; "Middle": "Dibit"; "Score": 90.2; "More": None}]
-
-(* empty table *)
-let empty_table = new table [];;
-
-(* TODO: example table in encoding *)
-
-let rec col_name_exists (header: 'a header) (col_name: string) =
-  match header with
-  | [] -> false
-  | (col, _) :: rst -> if col_name = col then true else col_name_exists rst col_name
-
-(* required ops on col names - concat, num_to_name, split *)
-let concat (col1: string) (col2: string): string =
-   col1 ^ col2
-
-let col_name_of_Number (num: int): string = 
-   string_of_int num
-
-let string_of_char c = String.make 1 c;;
-
-let explode str =
-  let rec explode_inner cur_index chars = 
-    if cur_index < String.length str then
-      let new_char = str.[cur_index] in
-      explode_inner (cur_index + 1) (chars @ [new_char])
-    else chars in
-  explode_inner 0 [];;
-
-let rec implode chars =
-  match chars with
-    [] -> ""
-    | h::t ->  string_of_char h ^ (implode t);;
-
-
-(* todo: write tests *)
-let split (col_name: string) (sep: string): string list =
-  let len_sep = String.length sep in
-  let rec split_helper col_name acc =
-    try
-      let idx = String.index col_name sep.[0] in
-      let prefix = String.sub col_name 0 idx in
-      let rest = String.sub col_name (idx + len_sep) (String.length col_name - idx - len_sep) in
-      split_helper rest (if prefix <> "" then acc @ [prefix] else acc)
-    with Not_found ->
-      if col_name <> "" then
-        acc @ [col_name]
-      else
-        acc
-  in
-  split_helper col_name [];;
-
-
-
-
-
-(* quiz score filter *)
-(* 
-  1. add a new col,
-  2. filter header
-  3. startswith
-  4. get value
-  5. length and sum? 
-*)
-
-
-(* add rows *)
-(* takes a table and a sequence of rows and returns a new table *)
-(* each row's schema must match the table's schema *)
-(* encoded in table *)
-
-
-
-(* todo: call it a day and write tests for the ones you have and change the example encodings. *)
-(* last session *)
-(* table *)
-
-(* let safe_zip (xs : 'a list) (ys : 'b list) : ('a * 'b) list option =
-  let rec zip acc xs ys =
-    match xs, ys with
-    | [], [] -> Some (List.rev acc)
-    | x :: xs, y :: ys -> zip ((x, y) :: acc) xs ys
-    | _ -> None
-  in
-  zip [] xs ys
-
-type header = string list
-
-class ['a] table (header : header)  = object
-  val mutable header : header = header
-  val mutable columns : 'a list = []
-  method columns : 'a list = columns
-
-  (* add rows, can't enforce the header *)
-  method add_rows (rows : 'a list) : 'a list =
-    match safe_zip header rows with
-    | Some zipped_rows ->
-      columns <- zipped_rows :: columns;
-      columns
-    | None -> failwith "Mismatched lengths of header and rows"
-
-
-
-end;;
-
-let split (col_name: string) (sep: string): string list =
-  let len_sep = String.length sep in
-  let rec split_helper col_name acc =
-    try
-      let idx = String.index col_name sep.[0] in
-      let prefix = String.sub col_name 0 idx in
-      let rest = String.sub col_name (idx + len_sep) (String.length col_name - idx - len_sep) in
-      split_helper rest (if prefix <> "" then acc @ [prefix] else acc)
-    with Not_found ->
-      if col_name <> "" then
-        acc @ [col_name]
-      else
-        acc
-  in
-  split_helper col_name [];;
-
-let even (num: int): bool =
- if num mod 2 ==  0 then 
-   true
- else
-   false;;
-
-even 2;;
-even 5;;
-
-let hs: header = ["name"; "age"; "quiz1"]
-let g_book =
-    object
-      val mutable name = ""
-      val mutable age = 0
-      val mutable quiz1 = 0.0
-
-      method name n = name <- n
-      method age a = age <- a
-      method quiz1 s = quiz1 <- s
-    end;;
-
-let gradebook = new table hs;;
-gradebook#add_rows [g_book]
-
-(* sequences, iters, lists, arrays? *)
-(* or just claim to use only lists and ignore everything else  *)
-(* let length (iters: 'a Seq.t): int =
-  let rec length_helper acc seq =
-    match Seq.next seq with
-    | Some (_, rest) -> length_helper (acc + 1) rest
-    | None -> acc
-  in
-  length_helper 0 iters;; *)
-
-
-(* let extend_record record new_vs col_name = 
- { record with col_name = new_vs };;
-
-let copy (existing_rows: 'a list) (new_rows: 'a list) (fn: 'a list -> 'b list): 'b list = 
-  if List.length existing_rows != List.length new_rows then
-    List.map2 extend_record existing_rows new_rows
-    (* [<int; str>] -> [<int;str;int>]  *)
+let normalize_row header row =
+  let names = List.map fst row in
+  if not (unique names) then Error "a row cannot contain a column more than once"
+  else if List.length row <> List.length header || not (List.for_all (fun c -> List.mem c names) header)
+  then Error "a row must contain exactly the table's columns"
+  else Ok (List.map (fun c -> (c, Option.get (find_in_row c row))) header)
+let of_rows header rows =
+  let* table = create header in
+  let rec loop acc = function
+    | [] -> Ok { table with rows = List.rev acc }
+    | row :: rest -> let* row = normalize_row header row in loop (row :: acc) rest
+  in loop [] rows
+let add_rows t rows = let* other = of_rows t.header rows in Ok { t with rows = t.rows @ other.rows }
+let row t index = if index < 0 then Error "row index must be non-negative" else match List.nth_opt t.rows index with Some r -> Ok r | None -> Error "row index is outside the table"
+let value t index column = let* r = row t index in match find_in_row column r with Some v -> Ok v | None -> Error ("unknown column: " ^ column)
+let column t name = if not (List.mem name t.header) then Error ("unknown column: " ^ name) else Ok (List.map (fun r -> Option.get (find_in_row name r)) t.rows)
+let add_column t name values =
+  if List.mem name t.header then Error ("duplicate column: " ^ name)
+  else if List.length values <> nrows t then Error "a new column needs one value per row"
+  else Ok { header = t.header @ [name]; rows = List.map2 (fun r v -> r @ [name, v]) t.rows values }
+let build_column t name f = add_column t name (List.map f t.rows)
+let select_rows t indices =
+  let rec loop acc = function [] -> Ok { t with rows = List.rev acc } | i :: is -> let* r = row t i in loop (r :: acc) is in loop [] indices
+let select_rows_mask t mask =
+  if List.length mask <> nrows t then Error "a row mask needs one boolean per row"
   else
-
-let add_column (t1: 'b table) (col_name: string) (vs: 'a list): 'c table =
- new table [];;
- *)
-(* let add_column : type a b c. b table -> string -> a list -> c table =
-  fun t1 col_name vs -> 
-   old_header = t1#header
-   new_header = old_header @ col_name
-
-   old_rows = t1#columns (* [<int; str>, <int; str>]*)
-   let copy = fun old_rows fn
-
-   new table new_header;; *)
-
-let rec col_name_exists (header: header) (col_name: string) =
-  match header with
-  | [] -> false
-  | col :: rst -> if col_name = col then true else col_name_exists rst col_name
-
-let rec find_index str lst index =
-  match lst with
-  | [] -> -1
-  | hd :: tl ->
-    if hd = str then index
-    else find_index str tl (index + 1)
-
-let find_string_index str lst =
-  find_index str lst 0
-
-let is_number_col (row: 'a) (col_name: string): bool =
-  try
-    let attr_value = Obj.field (Obj.repr row) (int_of_string col_name) in
-    Obj.is_int attr_value
-  with 
-  | Not_found | Failure _ -> false 
-
-let get_column (t1: 'a table) (col_name: string): 'a list = ....
-
-let dot_product (t1 : 'a table) (col1: string) (col2: string): int = ....
-(* check that both cols exist in the table *)
- if (col_name_exists t1#header col1) && (col_name_exists t1#header col2) then
-(* check that both are numbers or compatible with dotproducts? *)
-   if (is_number_col t1#columns[0] col1) &&  (is_number_col t1#columns[0] col2) then ....
-     
- else
-
-extract columns and calculate dotproduct *)
+    let rec keep selected mask rows = match mask, rows with
+      | [], [] -> List.rev selected
+      | true :: mask, row :: rows -> keep (row :: selected) mask rows
+      | false :: mask, _ :: rows -> keep selected mask rows
+      | _ -> assert false
+    in Ok { t with rows = keep [] mask t.rows }
+let select_columns t columns =
+  if not (unique columns) then Error "selected columns cannot contain duplicates"
+  else if not (List.for_all (fun c -> List.mem c t.header) columns) then Error "cannot select an unknown column"
+  else Ok { header = columns; rows = List.map (fun r -> List.map (fun c -> c, Option.get (find_in_row c r)) columns) t.rows }
+let filter t predicate = { t with rows = List.filter predicate t.rows }
+let drop_columns t columns = select_columns t (List.filter (fun c -> not (List.mem c columns)) t.header)
+let rename_columns t renames =
+  let rename c = match List.assoc_opt c renames with Some c -> c | None -> c in
+  let header = List.map rename t.header in
+  if not (List.for_all (fun (old, _) -> List.mem old t.header) renames) then Error "cannot rename an unknown column"
+  else if not (unique header) then Error "renaming would produce duplicate column names"
+  else Ok { header; rows = List.map (List.map (fun (c, v) -> rename c, v)) t.rows }
+let vcat left right = if left.header <> right.header then Error "vertical concatenation requires identical headers" else Ok { left with rows = left.rows @ right.rows }
+let hcat left right =
+  if nrows left <> nrows right then Error "horizontal concatenation requires equally many rows"
+  else if not (unique (left.header @ right.header)) then Error "horizontal concatenation requires disjoint headers"
+  else Ok { header = left.header @ right.header; rows = List.map2 ( @ ) left.rows right.rows }
+let cross_join left right =
+  if not (unique (left.header @ right.header)) then Error "cross join requires disjoint headers"
+  else Ok { header = left.header @ right.header; rows = List.concat_map (fun a -> List.map (fun b -> a @ b) right.rows) left.rows }
+let complete_cases t name = let* values = column t name in Ok (List.map ((<>) Missing) values)
+let dropna t = filter t (fun r -> List.for_all (fun (_, v) -> v <> Missing) r)
+let fillna t name replacement =
+  if not (List.mem name t.header) then Error ("unknown column: " ^ name)
+  else Ok { t with rows = List.map (List.map (fun (c, v) -> if c = name && v = Missing then c, replacement else c, v)) t.rows }
+let find t target =
+  let rec loop i = function [] -> Error "row is not in the table" | r :: rs -> if r = target then Ok i else loop (i + 1) rs in loop 0 t.rows
+let string_of_value = function
+  | String x -> Printf.sprintf "%S" x | Int x -> string_of_int x | Float x -> string_of_float x | Bool x -> string_of_bool x
+  | Sequence _ -> "<sequence>" | Nested_table _ -> "<table>" | Missing -> "<missing>"

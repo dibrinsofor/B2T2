@@ -1,3 +1,4 @@
 (library
  (name src)
- (libraries core))
+ (wrapped false)
+ (modules table_api example_tables example_programs errors))
