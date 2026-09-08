@@ -2,6 +2,7 @@ open Table_api
 
 let col name sort : column = { name; sort }
 
+(* B2T2: students *)
 let students : table = {
   schema = [col "name" String_sort; col "age" Int_sort; col "favorite color" String_sort];
   rows = [
@@ -11,6 +12,7 @@ let students : table = {
   ];
 }
 
+(* B2T2: studentsMissing *)
 let students_missing : table = {
   schema = [col "name" String_sort; col "age" Int_sort; col "favorite color" String_sort];
   rows = [
@@ -20,6 +22,7 @@ let students_missing : table = {
   ];
 }
 
+(* B2T2: employees *)
 let employees : table = {
   schema = [col "Last Name" String_sort; col "Department ID" Int_sort];
   rows = [
@@ -32,6 +35,7 @@ let employees : table = {
   ];
 }
 
+(* B2T2: departments *)
 let departments : table = {
   schema = [col "Department ID" Int_sort; col "Department Name" String_sort];
   rows = [
@@ -42,6 +46,7 @@ let departments : table = {
   ];
 }
 
+(* B2T2: jellyAnon *)
 let jelly_anon : table = {
   schema = List.map (fun name -> col name Bool_sort)
     ["get acne"; "red"; "black"; "white"; "green"; "yellow"; "brown"; "orange"; "pink"; "purple"];
@@ -59,6 +64,7 @@ let jelly_anon : table = {
   ];
 }
 
+(* B2T2: jellyNamed *)
 let jelly_named : table = {
   schema = col "name" String_sort :: jelly_anon.schema;
   rows = List.map2 (fun name row -> ("name", String name) :: row)
@@ -66,6 +72,7 @@ let jelly_named : table = {
     jelly_anon.rows;
 }
 
+(* B2T2: gradebook *)
 let gradebook : table = {
   schema = List.map (fun name -> col name (if name = "name" then String_sort else Int_sort))
     ["name"; "age"; "quiz1"; "quiz2"; "midterm"; "quiz3"; "quiz4"; "final"];
@@ -76,6 +83,7 @@ let gradebook : table = {
   ];
 }
 
+(* B2T2: gradebookMissing *)
 let gradebook_missing : table = {
   schema = gradebook.schema;
   rows = [
@@ -85,6 +93,7 @@ let gradebook_missing : table = {
   ];
 }
 
+(* B2T2: gradebookSeq *)
 let gradebook_seq : table = {
   schema = [col "name" String_sort; col "age" Int_sort; col "quizzes" (Sequence_sort Int_sort); col "midterm" Int_sort; col "final" Int_sort];
   rows = [
@@ -94,11 +103,13 @@ let gradebook_seq : table = {
   ];
 }
 
+(* Helper for B2T2: gradebookTable *)
 let quiz_table grades : table = {
   schema = [col "quiz#" Int_sort; col "grade" Int_sort];
   rows = List.mapi (fun index grade -> ["quiz#", Int (index + 1); "grade", Int grade]) grades;
 }
 
+(* B2T2: gradebookTable *)
 let gradebook_table : table = {
   schema = [col "name" String_sort; col "age" Int_sort; col "quizzes" Table_sort; col "midterm" Int_sort; col "final" Int_sort];
   rows = [
