@@ -86,7 +86,7 @@ let gradebook_missing : table = {
 }
 
 let gradebook_seq : table = {
-  schema = [col "name" String_sort; col "age" Int_sort; col "quizzes" (Sequence_sort (List.to_seq [Int_sort])); col "midterm" Int_sort; col "final" Int_sort];
+  schema = [col "name" String_sort; col "age" Int_sort; col "quizzes" (Sequence_sort Int_sort); col "midterm" Int_sort; col "final" Int_sort];
   rows = [
     ["name", String "Bob"; "age", Int 12; "quizzes", Sequence [Int 8; Int 9; Int 7; Int 9]; "midterm", Int 77; "final", Int 87];
     ["name", String "Alice"; "age", Int 17; "quizzes", Sequence [Int 6; Int 8; Int 8; Int 7]; "midterm", Int 88; "final", Int 85];
