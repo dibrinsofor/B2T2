@@ -5,7 +5,7 @@ type sort =
   | Int_sort
   | Float_sort
   | Bool_sort
-  | Sequence_sort of sort Seq.t
+  | Sequence_sort of sort
   | Table_sort
   | Unknown_sort
 
