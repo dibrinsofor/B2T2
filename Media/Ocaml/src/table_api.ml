@@ -1,21 +1,67 @@
 (** Immutable, schema-checked core representation for B2T2 tables. *)
-type value =
-  | String of string | Int of int | Float of float | Bool of bool
-  | Sequence of value list | Nested_table of t | Missing
-and row = (string * value) list
-and t = { header : string list; rows : row list }
-type 'a checked = ('a, string) result
-let ( let* ) = Result.bind
 
+type sort =
+  | String
+  | Int32
+  | Float
+  | Bool
+  | Sequence of sort Seq.t
+  | Table
+  | Unknown
+
+type value =
+  | String of string
+  | Int of int
+  | Float of float
+  | Bool of bool
+  | Null (* missing val *)
+  | Sequence of value list
+  | Nested_table of table
+
+and column = {
+  name: string;
+  sort: sort;
+}
+
+and row = (string * value) list
+
+and table = {
+  schema: column list;
+  rows: row list;   
+ }
+
+type 'a checked = ('a, string) result
+
+let header (table: table) =
+  List.map (fun col -> col.name) table.schema
+
+let empty_table : table = { schema = []; rows = [] }
+
+let nrows t = List.length t.rows
+let ncols t = List.length t.schema
+
+let check_sort (sort : sort) (value : value) : bool =
+    match sort, value with
+    | _, Null -> true
+    | String, String _ -> true
+    | Int32, Int _ -> true
+    | Float, Float _ -> true
+    | Bool, Bool _ -> true
+    | Sequence _, Sequence _ -> true
+    | Table, Nested_table _ -> true
+    | Unknown, _ -> true
+    | _ -> false
+
+let find_column table name : column option =
+  List.find_opt (fun col -> col.name = name) table.schema
+ 
+let find_in_row column row = List.assoc_opt column row
+
+let ( let* ) = Result.bind
 let unique xs =
   let rec loop seen = function [] -> true | x :: xs -> not (List.mem x seen) && loop (x :: seen) xs in
   loop [] xs
 let create header = if unique header then Ok { header; rows = [] } else Error "a table header cannot contain duplicate column names"
-let empty = { header = []; rows = [] }
-let header t = t.header
-let nrows t = List.length t.rows
-let ncols t = List.length t.header
-let find_in_row column row = List.assoc_opt column row
 
 let normalize_row header row =
   let names = List.map fst row in
@@ -31,8 +77,8 @@ let of_rows header rows =
   in loop [] rows
 let add_rows t rows = let* other = of_rows t.header rows in Ok { t with rows = t.rows @ other.rows }
 let row t index = if index < 0 then Error "row index must be non-negative" else match List.nth_opt t.rows index with Some r -> Ok r | None -> Error "row index is outside the table"
-let value t index column = let* r = row t index in match find_in_row column r with Some v -> Ok v | None -> Error ("unknown column: " ^ column)
 let column t name = if not (List.mem name t.header) then Error ("unknown column: " ^ name) else Ok (List.map (fun r -> Option.get (find_in_row name r)) t.rows)
+let value t index column = let* r = row t index in match find_in_row column r with Some v -> Ok v | None -> Error ("unknown column: " ^ column)
 let add_column t name values =
   if List.mem name t.header then Error ("duplicate column: " ^ name)
   else if List.length values <> nrows t then Error "a new column needs one value per row"
