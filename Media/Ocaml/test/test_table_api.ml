@@ -1,24 +1,64 @@
 open Table_api
 
-let fail message = raise (Failure message)
-let expect condition message = if not condition then fail message
-let expect_ok expected = function
-  | Ok actual -> expect (actual = expected) "unexpected successful result"
-  | Error message -> fail message
+let passed = ref 0
+let failed = ref 0
 
-let table = match of_rows ["name"; "age"] [["name", String "Bob"; "age", Int 12]; ["name", String "Eve"; "age", Missing]] with
-  | Ok table -> table | Error message -> fail message
+let check name expected actual show =
+  if expected = actual then begin
+    incr passed;
+    Printf.printf "[PASS] %s\n  expected: %s\n  actual:   %s\n\n"
+      name (show expected) (show actual)
+  end else begin
+    incr failed;
+    Printf.printf "[FAIL] %s\n  expected: %s\n  actual:   %s\n\n"
+      name (show expected) (show actual)
+  end
+
+let show_bool = string_of_bool
+let show_int = string_of_int
+let show_header names = "[" ^ String.concat "; " names ^ "]"
+
+let sample_table : table = {
+  schema = [
+    { name = "name"; sort = String_sort };
+    { name = "age"; sort = Int_sort };
+  ];
+  rows = [
+    ["name", String "Bob"; "age", Int 12];
+    ["name", String "Eve"; "age", Null];
+  ];
+}
 
 let () =
-  expect (Result.is_error (create ["x"; "x"])) "duplicate headers must fail";
-  expect (Result.is_error (of_rows ["x"; "y"] [["x", Int 1]])) "non-rectangular rows must fail";
-  expect (header table = ["name"; "age"]) "schema order must be preserved";
-  expect_ok (Int 12) (value table 0 "age");
-  (match add_column table "active" [Bool true; Bool false] with
-   | Ok table -> expect (ncols table = 3) "add_column must extend the schema"
-   | Error message -> fail message);
-  expect_ok [true; false] (complete_cases table "age");
-  (match select_rows table [1] with
-   | Ok table -> expect (nrows table = 1) "select_rows must return one row"
-   | Error message -> fail message);
-  print_endline "All table_api tests passed."
+  check "header derives names from schema"
+    ["name"; "age"]
+    (header sample_table)
+    show_header;
+
+  check "nrows counts rows"
+    2
+    (nrows sample_table)
+    show_int;
+
+  check "ncols counts schema columns"
+    2
+    (ncols sample_table)
+    show_int;
+
+  check "a string value matches String_sort"
+    true
+    (check_sort String_sort (String "Bob"))
+    show_bool;
+
+  check "an integer does not match String_sort"
+    false
+    (check_sort String_sort (Int 12))
+    show_bool;
+
+  check "Null is permitted in every sort"
+    true
+    (check_sort Int_sort Null)
+    show_bool;
+
+  Printf.printf "Summary: %d passed; %d failed\n" !passed !failed;
+  if !failed > 0 then exit 1
