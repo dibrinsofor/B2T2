@@ -1,13 +1,13 @@
 (** Immutable, schema-checked core representation for B2T2 tables. *)
 
 type sort =
-  | String
-  | Int32
-  | Float
-  | Bool
-  | Sequence of sort Seq.t
-  | Table
-  | Unknown
+  | String_sort
+  | Int_sort
+  | Float_sort
+  | Bool_sort
+  | Sequence_sort of sort Seq.t
+  | Table_sort
+  | Unknown_sort
 
 type value =
   | String of string
@@ -43,13 +43,13 @@ let ncols t = List.length t.schema
 let check_sort (sort : sort) (value : value) : bool =
     match sort, value with
     | _, Null -> true
-    | String, String _ -> true
-    | Int32, Int _ -> true
-    | Float, Float _ -> true
-    | Bool, Bool _ -> true
-    | Sequence _, Sequence _ -> true
-    | Table, Nested_table _ -> true
-    | Unknown, _ -> true
+    | String_sort, String _ -> true
+    | Int_sort, Int _ -> true
+    | Float_sort, Float _ -> true
+    | Bool_sort, Bool _ -> true
+    | Sequence_sort _, Sequence _ -> true
+    | Table_sort, Nested_table _ -> true
+    | Unknown_sort, _ -> true
     | _ -> false
 
 let find_column table name : column option =
