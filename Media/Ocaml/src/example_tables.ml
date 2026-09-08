@@ -103,7 +103,6 @@ let gradebook_seq : table = {
   ];
 }
 
-(* Helper for B2T2: gradebookTable *)
 let quiz_table grades : table = {
   schema = [col "quiz#" Int_sort; col "grade" Int_sort];
   rows = List.mapi (fun index grade -> ["quiz#", Int (index + 1); "grade", Int grade]) grades;
