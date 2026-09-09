@@ -57,13 +57,36 @@ let check_sort (sort : sort) (value : value) : bool =
 
 let find_column table name : column option =
   List.find_opt (fun col -> col.name = name) table.schema
- 
-(* let find_in_row column row = List.assoc_opt column row *)
+  
+let find_in_row column row = List.assoc_opt column row
+
+let get_column t name = 
+  if Option.is_none (find_column t name) 
+    then 
+      Error ("unknown column: " ^ name) 
+    else 
+      Ok (List.map (fun r -> Option.get (find_in_row name r)) t.rows)
+
+let row t index = 
+  if index < 0 then 
+    Error "row index must be non-negative" 
+  else match List.nth_opt t.rows index with 
+  | Some r -> Ok r 
+  | None -> Error "row index is outside the table"
+
+
+let ( let* ) = Result.bind
+
+let select_rows t indices =
+  let rec loop acc = function 
+  | [] -> Ok { t with rows = List.rev acc } 
+  | i :: is -> 
+    let* r = 
+      row t i in loop (r :: acc) is 
+  in 
+  loop [] indices
 
 (* let ( let* ) = Result.bind *)
-(* let unique xs = *)
-  (* let rec loop seen = function [] -> true | x :: xs -> not (List.mem x seen) && loop (x :: seen) xs in *)
-  (* loop [] xs *)
 (* let create schema = *)
   (* if unique (schema_names schema) then Ok { schema; rows = [] } *)
   (* else Error "a table schema cannot contain duplicate column names" *)
@@ -82,16 +105,13 @@ let find_column table name : column option =
     (* | row :: rest -> let* row = normalize_row schema row in loop (row :: acc) rest *)
   (* in loop [] rows *)
 (* let add_rows t rows = let* other = of_rows t.schema rows in Ok { t with rows = t.rows @ other.rows } *)
-(* let row t index = if index < 0 then Error "row index must be non-negative" else match List.nth_opt t.rows index with Some r -> Ok r | None -> Error "row index is outside the table" *)
-(* let column t name = if Option.is_none (find_column t name) then Error ("unknown column: " ^ name) else Ok (List.map (fun r -> Option.get (find_in_row name r)) t.rows) *)
+
 (* let value t index column = let* r = row t index in match find_in_row column r with Some v -> Ok v | None -> Error ("unknown column: " ^ column) *)
 (* let add_column t name values = *)
   (* if Option.is_some (find_column t name) then Error ("duplicate column: " ^ name) *)
   (* else if List.length values <> nrows t then Error "a new column needs one value per row" *)
   (* else Ok { schema = t.schema @ [{ name; sort = Unknown_sort }]; rows = List.map2 (fun r v -> r @ [name, v]) t.rows values } *)
 (* let build_column t name f = add_column t name (List.map f t.rows) *)
-(* let select_rows t indices = *)
-  (* let rec loop acc = function [] -> Ok { t with rows = List.rev acc } | i :: is -> let* r = row t i in loop (r :: acc) is in loop [] indices *)
 (* let select_rows_mask t mask = *)
   (* if List.length mask <> nrows t then Error "a row mask needs one boolean per row" *)
   (* else *)
@@ -128,6 +148,30 @@ let find_column table name : column option =
   (* else Ok { t with rows = List.map (List.map (fun (c, v) -> if c = name && v = Null then c, replacement else c, v)) t.rows } *)
 (* let find t target = *)
   (* let rec loop i = function [] -> Error "row is not in the table" | r :: rs -> if r = target then Ok i else loop (i + 1) rs in loop 0 t.rows *)
-(* let string_of_value = function *)
-  (* | String x -> Printf.sprintf "%S" x | Int x -> string_of_int x | Float x -> string_of_float x | Bool x -> string_of_bool x *)
-  (* | Sequence _ -> "<sequence>" | Nested_table _ -> "<table>" | Null -> "<missing>" *)
+let string_of_value = function
+  | String x -> Printf.sprintf "%S" x
+  | Int x -> string_of_int x
+  | Float x -> string_of_float x
+  | Bool x -> string_of_bool x
+  | Sequence _ -> "<sequence>"
+  | Nested_table _ -> "<table>"
+  | Null -> "<missing>"
+
+let string_of_table table =
+  let names = header table in
+  let cells = List.map (fun row -> List.map (fun name ->
+    match List.assoc_opt name row with
+    | Some value -> string_of_value value
+    | None -> "<missing>"
+  ) names) table.rows in
+  let widths = List.mapi (fun index name ->
+    List.fold_left (fun width row -> max width (String.length (List.nth row index)))
+      (String.length name) cells
+  ) names in
+  let pad width text = text ^ String.make (width - String.length text) ' ' in
+  let render row = "| " ^ String.concat " | " (List.map2 pad widths row) ^ " |" in
+  let divider = "|-" ^ String.concat "-| -" (List.map (fun width -> String.make width '-') widths) ^ "-|" in
+  String.concat "\n" (render names :: divider :: List.map render cells)
+
+let print_table table =
+  print_endline (string_of_table table)

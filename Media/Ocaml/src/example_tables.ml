@@ -117,3 +117,22 @@ let gradebook_table : table = {
     ["name", String "Eve"; "age", Int 13; "quizzes", Nested_table (quiz_table [7; 9; 8; 8]); "midterm", Int 84; "final", Int 77];
   ];
 }
+
+let all_examples = [
+  "students", students;
+  "studentsMissing", students_missing;
+  "employees", employees;
+  "departments", departments;
+  "jellyAnon", jelly_anon;
+  "jellyNamed", jelly_named;
+  "gradebook", gradebook;
+  "gradebookMissing", gradebook_missing;
+  "gradebookSeq", gradebook_seq;
+  "gradebookTable", gradebook_table;
+]
+
+let print_all_examples () =
+  List.iter (fun (name, table) ->
+    Printf.printf "\n=== %s ===\n" name;
+    print_table table
+  ) all_examples
