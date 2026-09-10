@@ -60,6 +60,17 @@ let fisher_test lst1 lst2 =
         in
         Ok (numerator /. denominator)
 
+let remove_duplicates values =
+  let rec loop seen acc = function
+    | [] ->
+      List.rev acc
+    | values :: tail ->
+      if List.mem values acc then
+        loop seen acc tail
+      else
+        loop (values :: seen) (values :: acc) tail
+  in
+  loop [] [] values
 
 (* dotProduct *)
 let dot_product table c1 c2 =
@@ -151,3 +162,93 @@ let quiz_score_filter table col_name =
 (* match quiz_score_filter gradebook "average-quiz" with *)
 (* | Ok t -> print_table t *)
 (* | Error msg -> Printf.printf "%s" msg *)
+
+(* quizScoreSelect *)
+let quiz_score_select table =
+  let quiz_col_names = List.init 4 (fun i -> "quiz" ^ string_of_int (i + 1)) in
+  let quiz_table = select_columns_3 table quiz_col_names in
+  let avg nums =
+    let sum = List.fold_left (+) 0 nums in
+    float_of_int sum /. float_of_int (List.length nums) in
+  let scores row = List.filter_map (fun name ->
+    match find_in_row name row with
+    | Some (Int score) -> Some score
+    | _ -> None
+  ) quiz_col_names in
+  match quiz_table with
+  | Error msg -> Error msg
+  | Ok t -> 
+    let compute_scores = (fun row -> Float (avg (scores row))) in
+    match build_column t "average" compute_scores with
+      | Error msg -> Error msg
+      | Ok quiz_and_average -> 
+        match get_column quiz_and_average "average" with
+        | Ok cols ->
+          add_column table "average-quiz" cols
+        | Error msg -> Error msg
+
+(* quiz_score_select gradebook *)
+
+(* groupByRetentive *)
+let table_of_col col_name vals =
+  let t1 = {
+    empty_table with
+    rows =  List.map (fun _ -> []) vals
+  } in
+  add_column t1 col_name vals
+
+let group_by_retentive table col_name =
+  match (get_column table col_name) with
+  | Error msg -> Error msg
+  | Ok col ->
+    match table_of_col "key" (remove_duplicates col)  with
+    | Error msg -> Error msg
+    | Ok keys -> 
+      let make_group kr =
+        let k = Option.get (find_in_row "key" kr) in
+        let pred r =
+          find_in_row col_name r = Some k
+        in
+        Nested_table {table with rows = List.filter pred table.rows}
+    in
+    build_column keys "groups" make_group
+
+(* match group_by_retentive students "favorite color" with *)
+(* | Error _ -> Printf.printf "bummmer" *)
+(* | Ok t -> print_table t *)
+
+
+(* groupBySubtractive *)
+let group_by_subtractive table col_name =
+  match get_column table col_name with
+  | Error msg -> Error msg
+  | Ok col ->
+      match table_of_col "key" (remove_duplicates col) with
+      | Error msg -> Error msg
+      | Ok keys ->
+          let rec make_groups groups = function
+            | [] -> Ok (List.rev groups)
+            | kr :: remaining ->
+                match find_in_row "key" kr with
+                | None -> Error "a key row has no key"
+                | Some k ->
+                    let matching_rows =
+                      List.filter
+                        (fun r -> find_in_row col_name r = Some k)
+                        table.rows
+                    in
+                    let retained_group = { table with rows = matching_rows } in
+                    match drop_columns retained_group [col_name] with
+                    | Error msg -> Error msg
+                    | Ok group ->
+                        make_groups (Nested_table group :: groups) remaining
+          in
+          match make_groups [] keys.rows with
+          | Error msg -> Error msg
+          | Ok groups -> add_column keys "groups" groups
+
+      
+let some =
+  match group_by_subtractive students "favorite color" with
+  | Error _ -> Printf.printf "bummer"
+  | Ok t -> print_table t
