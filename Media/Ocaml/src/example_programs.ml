@@ -248,7 +248,6 @@ let group_by_subtractive table col_name =
           | Ok groups -> add_column keys "groups" groups
 
       
-let some =
-  match group_by_subtractive students "favorite color" with
-  | Error _ -> Printf.printf "bummer"
-  | Ok t -> print_table t
+(* match group_by_subtractive students "favorite color" with *)
+(* | Error _ -> Printf.printf "bummer" *)
+(* | Ok t -> print_table t *)
