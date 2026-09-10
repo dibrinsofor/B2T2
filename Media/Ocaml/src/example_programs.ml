@@ -22,6 +22,45 @@ let sample lst idx =
     in
     Some (sample_pt sorted idx [])
 
+let fisher_test lst1 lst2 =
+  if List.length lst1 <> List.length lst2 then
+    Error "Both sequences must be of the same length"
+  else
+    let rec count false_false false_true true_false true_true = function
+      | ([], []) -> Ok (false_false, false_true, true_false, true_true)
+      | (Bool left :: lefts, Bool right :: rights) ->
+          let next_counts =
+            match left, right with
+            | false, false -> false_false + 1, false_true, true_false, true_true
+            | false, true -> false_false, false_true + 1, true_false, true_true
+            | true, false -> false_false, false_true, true_false + 1, true_true
+            | true, true -> false_false, false_true, true_false, true_true + 1
+          in
+          let false_false, false_true, true_false, true_true = next_counts in
+          count false_false false_true true_false true_true (lefts, rights)
+      | _ -> Error "fisherTest requires two boolean columns"
+    in
+    let factorial n =
+      let rec loop total = function
+        | 0 -> total
+        | value -> loop (total *. float_of_int value) (value - 1)
+      in
+      loop 1.0 n
+    in
+    match count 0 0 0 0 (lst1, lst2) with
+    | Error _ as error -> error
+    | Ok (a, b, c, d) ->
+        let numerator =
+          factorial (a + b) *. factorial (c + d) *.
+          factorial (a + c) *. factorial (b + d)
+        in
+        let denominator =
+          factorial a *. factorial b *. factorial c *. factorial d *.
+          factorial (a + b + c + d)
+        in
+        Ok (numerator /. denominator)
+
+
 (* dotProduct *)
 let dot_product table c1 c2 =
   let ns_boxed = get_column table c1 in
@@ -50,11 +89,65 @@ let sample_rows table n_1 =
     | Some indices -> select_rows table indices
     | None -> Error "table has no rows"
 
-let check_example_2 = 
-  Random.self_init ();
-  match sample_rows gradebook_missing 2 with 
-  | Ok table -> print_table table
-  | Error msg -> Printf.printf "%s" msg
+(* Random.self_init (); *)
+(* match sample_rows gradebook_missing 2 with *) 
+(* | Ok table -> print_table table *)
+(* | Error msg -> Printf.printf "%s" msg *)
+
 
 (* pHackingHomogeneous *)
-let p_hacking_homogeneous _table _threshold = ()
+let p_hacking table =
+  let col_name = "get acne" in
+  match get_column table col_name, drop_columns table [col_name] with
+  | Ok col_acne, Ok jelly_anon_ ->
+    let rec iter_heads = function
+    | [] -> Ok ()
+    | head :: tail -> 
+      match get_column jelly_anon_ head with
+      | Error msg -> Error msg
+      | Ok col_jb ->
+        match fisher_test col_acne col_jb with
+        | Ok p ->
+          if p < 0.05 then (
+            Printf.printf "We found a link between %s jelly beans and acne (p < 0.05)."
+            head);
+          iter_heads tail
+        | Error msg -> Error msg
+    in
+    iter_heads (header jelly_anon_)
+  | Error msg, _ | _, Error msg -> Error msg
+
+let p_hacking_homogeneous table =
+  p_hacking table
+
+(* p_hacking_homogeneous jelly_anon *)
+
+(* pHackingHeterogeneous *)
+let p_hacking_hetero table =
+  let col_name = "name" in
+  match drop_columns table [col_name] with
+  | Error msg -> Error msg
+  | Ok v -> p_hacking v;; 
+
+(* p_hacking_hetero jelly_named *) 
+
+
+(* quizScoreFilter *)
+let quiz_score_filter table col_name =
+  let headers = List.filter
+    (fun name -> String.starts_with ~prefix:"quiz" name)
+    (header table) in
+  let scores row = List.filter_map (fun name ->
+    match find_in_row name row with
+    | Some (Int score) -> Some score
+    | _ -> None
+  ) headers in
+  let avg nums =
+    let sum = List.fold_left (+) 0 nums in
+    float_of_int sum /. float_of_int (List.length nums) in
+  let averages = (fun row -> Float (avg (scores row))) in
+    build_column table col_name averages
+  
+(* match quiz_score_filter gradebook "average-quiz" with *)
+(* | Ok t -> print_table t *)
+(* | Error msg -> Printf.printf "%s" msg *)

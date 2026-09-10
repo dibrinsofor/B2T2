@@ -85,8 +85,54 @@ let select_rows t indices =
       row t i in loop (r :: acc) is 
   in 
   loop [] indices
+  
+let unique values =
+  let rec loop seen = function
+  | [] -> true
+  | value :: rest ->
+    if List.mem value seen then
+      false
+    else
+      loop (value :: seen) rest
+  in
+  loop [] values
 
-(* let ( let* ) = Result.bind *)
+let select_columns_3 t columns =
+  if not (unique columns) then 
+    Error "columns cannot contain duplicates"
+  else if not (List.for_all (fun c -> Option.is_some (find_column t c)) columns) then 
+    Error "cannot select an unknown column" 
+  else 
+    Ok { schema = List.map (fun c -> Option.get (find_column t c)) columns; 
+          rows = List.map (fun r -> List.map (fun c -> c, Option.get (find_in_row c r)) columns) t.rows }
+
+let drop_columns t col_names = 
+  if not (List.for_all (fun c -> Option.is_some (find_column t c))
+      col_names)
+    then
+      Error "cannot drop an unknown column"
+  else 
+    select_columns_3 t (List.filter (fun c -> not (List.mem c col_names)) (header t))
+
+let value t index column =
+  let* r = row t index in
+  match find_in_row column r with
+  | Some v -> Ok v
+  | None -> Error ("unknown column: " ^ column)
+
+let add_column t name values =
+  if Option.is_some (find_column t name) then
+    Error ("duplicate column: " ^ name)
+  else if List.length values <> nrows t then
+    Error "a new column needs one value per row"
+  else
+    Ok { schema = t.schema @ [{ name; sort = Unknown_sort }];
+        rows = List.map2 (fun r v -> r @ [name, v]) t.rows values }
+
+let build_column t name f = add_column t name (List.map f t.rows)
+
+(* let filter t predicate = { t with rows = List.filter predicate t.rows } *)
+
 (* let create schema = *)
   (* if unique (schema_names schema) then Ok { schema; rows = [] } *)
   (* else Error "a table schema cannot contain duplicate column names" *)
@@ -106,12 +152,6 @@ let select_rows t indices =
   (* in loop [] rows *)
 (* let add_rows t rows = let* other = of_rows t.schema rows in Ok { t with rows = t.rows @ other.rows } *)
 
-(* let value t index column = let* r = row t index in match find_in_row column r with Some v -> Ok v | None -> Error ("unknown column: " ^ column) *)
-(* let add_column t name values = *)
-  (* if Option.is_some (find_column t name) then Error ("duplicate column: " ^ name) *)
-  (* else if List.length values <> nrows t then Error "a new column needs one value per row" *)
-  (* else Ok { schema = t.schema @ [{ name; sort = Unknown_sort }]; rows = List.map2 (fun r v -> r @ [name, v]) t.rows values } *)
-(* let build_column t name f = add_column t name (List.map f t.rows) *)
 (* let select_rows_mask t mask = *)
   (* if List.length mask <> nrows t then Error "a row mask needs one boolean per row" *)
   (* else *)
@@ -121,12 +161,7 @@ let select_rows t indices =
       (* | false :: mask, _ :: rows -> keep selected mask rows *)
       (* | _ -> assert false *)
     (* in Ok { t with rows = keep [] mask t.rows } *)
-(* let select_columns t columns = *)
-  (* if not (unique columns) then Error "selected columns cannot contain duplicates" *)
-  (* else if not (List.for_all (fun c -> Option.is_some (find_column t c)) columns) then Error "cannot select an unknown column" *)
-  (* else Ok { schema = List.map (fun c -> Option.get (find_column t c)) columns; rows = List.map (fun r -> List.map (fun c -> c, Option.get (find_in_row c r)) columns) t.rows } *)
-(* let filter t predicate = { t with rows = List.filter predicate t.rows } *)
-(* let drop_columns t columns = select_columns t (List.filter (fun c -> not (List.mem c columns)) (header t)) *)
+
 (* let rename_columns t renames = *)
   (* let rename c = match List.assoc_opt c renames with Some c -> c | None -> c in *)
   (* let names = List.map rename (header t) in *)
