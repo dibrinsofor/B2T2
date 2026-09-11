@@ -1,3 +1,3 @@
 let () =
     Example_tables.print_all_examples ();
-    Errors.print_all_errors ()
+    Table_errors.print_all_errors ()
