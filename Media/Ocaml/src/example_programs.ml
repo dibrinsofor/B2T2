@@ -1,5 +1,5 @@
 open Table_api
-open Example_tables
+open! Example_tables
 
 let getval lst idx =
     match List.nth_opt lst idx with
@@ -59,18 +59,6 @@ let fisher_test lst1 lst2 =
           factorial (a + b + c + d)
         in
         Ok (numerator /. denominator)
-
-let remove_duplicates values =
-  let rec loop seen acc = function
-    | [] ->
-      List.rev acc
-    | values :: tail ->
-      if List.mem values acc then
-        loop seen acc tail
-      else
-        loop (values :: seen) (values :: acc) tail
-  in
-  loop [] [] values
 
 (* dotProduct *)
 let dot_product table c1 c2 =
@@ -190,28 +178,8 @@ let quiz_score_select table =
 (* quiz_score_select gradebook *)
 
 (* groupByRetentive *)
-let table_of_col col_name vals =
-  let t1 = {
-    empty_table with
-    rows =  List.map (fun _ -> []) vals
-  } in
-  add_column t1 col_name vals
-
 let group_by_retentive table col_name =
-  match (get_column table col_name) with
-  | Error msg -> Error msg
-  | Ok col ->
-    match table_of_col "key" (remove_duplicates col)  with
-    | Error msg -> Error msg
-    | Ok keys -> 
-      let make_group kr =
-        let k = Option.get (find_in_row "key" kr) in
-        let pred r =
-          find_in_row col_name r = Some k
-        in
-        Nested_table {table with rows = List.filter pred table.rows}
-    in
-    build_column keys "groups" make_group
+  Table_api.group_by_retentive table col_name
 
 (* match group_by_retentive students "favorite color" with *)
 (* | Error _ -> Printf.printf "bummmer" *)
@@ -220,32 +188,7 @@ let group_by_retentive table col_name =
 
 (* groupBySubtractive *)
 let group_by_subtractive table col_name =
-  match get_column table col_name with
-  | Error msg -> Error msg
-  | Ok col ->
-      match table_of_col "key" (remove_duplicates col) with
-      | Error msg -> Error msg
-      | Ok keys ->
-          let rec make_groups groups = function
-            | [] -> Ok (List.rev groups)
-            | kr :: remaining ->
-                match find_in_row "key" kr with
-                | None -> Error "a key row has no key"
-                | Some k ->
-                    let matching_rows =
-                      List.filter
-                        (fun r -> find_in_row col_name r = Some k)
-                        table.rows
-                    in
-                    let retained_group = { table with rows = matching_rows } in
-                    match drop_columns retained_group [col_name] with
-                    | Error msg -> Error msg
-                    | Ok group ->
-                        make_groups (Nested_table group :: groups) remaining
-          in
-          match make_groups [] keys.rows with
-          | Error msg -> Error msg
-          | Ok groups -> add_column keys "groups" groups
+  Table_api.group_by_subtractive table col_name
 
       
 (* match group_by_subtractive students "favorite color" with *)
