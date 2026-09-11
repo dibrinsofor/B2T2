@@ -68,14 +68,38 @@ allowing necessary operations to validate and normalize tables.
 > Q. Are there consistent changes made to the way the operations are
 > represented?
 
+- A table has a runtime schema and a list of named cells for each row.
+- Values use the value variant (`String`, `Int`, `Float`, `Bool`, `Null`,
+  `Sequence`, and `Nested_table`).
+- Operations that can violate a precondition return `('a, string) result`,
+  rather than assuming the benchmark’s Requires clauses are already satisfied.
+
 > Q. Which operations are entirely inexpressible? Why?
+
+None.
 
 > Q. Which operations are only partially expressible? Why, and what’s missing?
 
+Several operations are only partially precise. `add_column` and `build_column`
+infer a sort from concrete values, but an all-Null column must remain
+`Unknown_sort`. `Table_sort` records that a cell contains a nested table but
+does not track that nested table’s exact schema. `group_by` requires an explicit
+output schema because a runtime implementation cannot infer a schema from an
+empty result. `order_by` cannot exactly represent the benchmark’s heterogeneous
+existential list of comparers: an ordinary OCaml list requires all comparers to
+use the same key type.
+
 > Q. Which operations’ expressibility is unknown? Why?
+
+None.
 
 > Q. Which operations can be expressed more precisely than in the benchmark?
 > How?
+
+Constructors such as `create`, `of_rows`, and `add_rows` validate exact row
+names, reject duplicate schema columns, normalize row order, and validate cell
+sorts. Operations return explicit error messages for invalid runtime conditions,
+and `Null` is baked into the table encoding.
 
 ## Example Programs
 
