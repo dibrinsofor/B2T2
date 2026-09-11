@@ -32,7 +32,8 @@ and table = {
 
 (*
   (* Alt. Consideration 1: *)
-  (* table that store rows as a polymorphic type, but OCaml could not easily connect schema to object's fields. *)
+  (* table that store rows as a polymorphic type,
+  but OCaml could not easily connect schema to object's fields. *)
   let hs: header = ["name"; "age"; "quiz1"]
   let g_book =
       object
@@ -47,6 +48,23 @@ and table = {
 
   let gradebook = new table hs;;
   gradebook#add_rows [g_book]
+
+  (* Alt. Consideration 2: *)
+  (* statically typed record approach where schema is enforced by list
+  types, but operations such as adding columns, selecting columns by
+  runtime strings, or combining tables with different schemas became much harder *)
+  type gradebook_row = {
+    name : string;
+    age : int;
+    quiz1 : float;
+  }
+
+  let gradebook : gradebook_row list = [
+    { name = "Dibit"; age = 10; quiz1 = 90.2 };
+    { name = "Dibit"; age = 10; quiz1 = 90.2 };
+  ]
+  
+  let ages = List.map (fun row -> row.age) gradebook
 
 *)
 
