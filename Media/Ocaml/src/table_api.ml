@@ -30,6 +30,26 @@ and table = {
   rows: row list;   
  }
 
+(*
+  (* Alt. Consideration 1: *)
+  (* table that store rows as a polymorphic type, but OCaml could not easily connect schema to object's fields. *)
+  let hs: header = ["name"; "age"; "quiz1"]
+  let g_book =
+      object
+        val mutable name = ""
+        val mutable age = 0
+        val mutable quiz1 = 0.0
+
+        method name n = name <- n
+        method age a = age <- a
+        method quiz1 s = quiz1 <- s
+      end;;
+
+  let gradebook = new table hs;;
+  gradebook#add_rows [g_book]
+
+*)
+
 type 'a checked = ('a, string) result
 
 let header (table: table) =
